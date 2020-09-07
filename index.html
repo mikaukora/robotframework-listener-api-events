@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+        <title>WebSocket listener</title>
+    </head>
+    <body>
+        <div class="container">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="messageCheck" data-toggle="toggle" onclick="setVisibility()">
+                <label class="form-check-label" for="messageCheck">message</label>
+            </div>
+                <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="log_messageCheck" data-toggle="toggle" onclick="setVisibility()">
+                <label class="form-check-label" for="log_messageCheck">log_message</label>
+            </div>
+            <div class="accordion" id="accordionExample"></div>
+        </div>
+
+        <script>
+            var ws = new WebSocket("ws://127.0.0.1:5678/");
+            var count = 0;
+
+            function showhide(el, check) {
+                /* Card open and gets hidden by checkbox, close first. */
+                var content = el.nextElementSibling;
+                if (content) {
+                    content.classList.remove("show");
+                }
+                el.style.display = check ? 'block' : 'none';
+            }
+
+            function setVisibility(){
+                var messageChecked = document.getElementById('messageCheck').checked;
+                var message_list = document.getElementsByClassName('message');
+                var log_messageChecked = document.getElementById('log_messageCheck').checked;
+                var log_message_list = document.getElementsByClassName('log_message');
+
+                for (var i = 0; i < message_list.length; i++) {
+                    showhide(message_list[i], messageChecked);
+                }
+
+                for (var i = 0; i < log_message_list.length; i++) {
+                    showhide(log_message_list[i], log_messageChecked);
+                }
+            }
+
+            ws.onmessage = function (event) {
+                var jsondata = JSON.parse(event.data);
+                var messages = document.getElementsByClassName('accordion')[0];
+
+                var message = document.createElement('div');
+                message.setAttribute("class", "card-header");
+                message.classList.add(jsondata.event);
+
+                /* Checkboxes set the visibility of these events. */
+                if (jsondata.event == "message") {
+                    var messageChecked = document.getElementById('messageCheck').checked;
+                    showhide(message, messageChecked);
+                }
+                if (jsondata.event == "log_message") {
+                    var messageChecked = document.getElementById('log_messageCheck').checked;
+                    showhide(message, messageChecked);
+                }
+
+                var button = document.createElement('button');
+                button.setAttribute("type", "button");
+                button.setAttribute("data-toggle", "collapse");
+                button.setAttribute("data-target", "#collapse-" + count);
+                button.setAttribute("class", "btn btn-link");
+
+                if (jsondata.event == "start_suite") {
+                    button.classList.add("font-weight-bold");
+                }
+
+                var kwname = '';
+                if (jsondata.kwname) {
+                    kwname = ' - ' + jsondata.kwname;
+                }
+                var content = document.createTextNode(jsondata.event + kwname);
+                button.appendChild(content);
+                message.appendChild(button);
+                messages.appendChild(message);
+
+                var card = document.createElement('div');
+                card.setAttribute("class", "collapse hide card-body");
+                card.setAttribute("id", "collapse-" + count);
+                card.setAttribute("data-parent", "#accordionExample");
+
+                var message = document.createElement('pre');
+                message.innerHTML= JSON.stringify(jsondata, undefined, 2);
+                card.appendChild(message);
+                messages.appendChild(card);
+                count = count + 1;
+            };
+        </script>
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+    </body>
+</html>
